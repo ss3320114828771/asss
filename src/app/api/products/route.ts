@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'  // ✅ Add this import
 
 // Define types for better type safety
 interface WhereClause {
@@ -30,13 +30,10 @@ export async function GET(request: Request) {
     const maxPrice = searchParams.get('maxPrice')
     const sort = searchParams.get('sort') || 'newest'
     
-    // Calculate skip for pagination
     const skip = (page - 1) * limit
     
-    // Build where clause with proper typing
     const whereClause: WhereClause = {}
     
-    // Add search filter
     if (search) {
       whereClause.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -44,14 +41,12 @@ export async function GET(request: Request) {
       ]
     }
     
-    // Add price range filter
     if (minPrice || maxPrice) {
       whereClause.price = {}
       if (minPrice) whereClause.price.gte = parseFloat(minPrice)
       if (maxPrice) whereClause.price.lte = parseFloat(maxPrice)
     }
     
-    // Build order by with proper typing
     let orderBy: OrderBy = {}
     switch (sort) {
       case 'price_asc':
@@ -73,7 +68,7 @@ export async function GET(request: Request) {
         orderBy = { createdAt: 'desc' }
     }
     
-    // Fetch products with pagination
+    // ✅ Now Prisma is imported, so this works
     const products = await db.product.findMany({
       where: whereClause as Prisma.ProductWhereInput,
       orderBy: orderBy as Prisma.ProductOrderByWithRelationInput,
@@ -81,7 +76,6 @@ export async function GET(request: Request) {
       take: limit
     })
     
-    // Get total count
     const total = await db.product.count({
       where: whereClause as Prisma.ProductWhereInput
     })
@@ -110,7 +104,6 @@ export async function POST(request: Request) {
   try {
     const { name, price, image, description } = await request.json()
     
-    // Validation
     if (!name || !price || !image || !description) {
       return NextResponse.json(
         { error: 'All fields are required', success: false }, 
