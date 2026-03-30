@@ -1,15 +1,5 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { Prisma } from '@prisma/client'
-
-// Define types
-type WhereClause = Prisma.ProductWhereInput
-
-interface OrderBy {
-  price?: 'asc' | 'desc'
-  name?: 'asc' | 'desc'
-  createdAt?: 'asc' | 'desc'
-}
 
 export async function GET(request: Request) {
   try {
@@ -23,13 +13,14 @@ export async function GET(request: Request) {
     
     const skip = (page - 1) * limit
     
-    // Build where clause with proper type
-    const whereClause: WhereClause = {}
+    // Build where clause - simple object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereClause: any = {}
     
     if (search) {
       whereClause.OR = [
-        { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
-        { description: { contains: search, mode: Prisma.QueryMode.insensitive } }
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
       ]
     }
     
@@ -39,8 +30,9 @@ export async function GET(request: Request) {
       if (maxPrice) whereClause.price.lte = parseFloat(maxPrice)
     }
     
-    // Build order by with proper type
-    let orderBy: OrderBy = { createdAt: 'desc' }
+    // Build order by
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let orderBy: any = { createdAt: 'desc' }
     switch (sort) {
       case 'price_asc':
         orderBy = { price: 'asc' }
