@@ -3,6 +3,20 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 
+// Define Order type
+interface Order {
+  id: string
+  userId: string
+  total: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  items: any
+  createdAt: Date
+  user?: {
+    id: string
+    email: string
+  }
+}
+
 // GET - Fetch orders with authentication
 export async function GET(request: Request) {
   try {
@@ -36,8 +50,8 @@ export async function GET(request: Request) {
       })
     }
     
-    // Parse items JSON for each order
-    const parsedOrders = orders.map(order => ({
+    // ✅ Fixed: Added type for 'order'
+    const parsedOrders = orders.map((order: Order) => ({
       ...order,
       items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items
     }))
@@ -113,19 +127,22 @@ export async function POST(request: Request) {
       data: {
         userId,
         total,
-        items: items // Directly pass the array, Prisma will handle JSON conversion
+        items: JSON.stringify(items) // ✅ Fixed: Convert to string
       }
     })
     
     // Log order creation
     console.log(`✅ Order created: ${order.id} - Total: $${total} - User: ${userId}`)
     
+    // Parse items for response
+    const orderWithParsedItems = {
+      ...order,
+      items: JSON.parse(order.items as string)
+    }
+    
     return NextResponse.json({ 
       success: true, 
-      order: {
-        ...order,
-        items: order.items // Already in correct format
-      },
+      order: orderWithParsedItems,
       message: 'Order placed successfully!' 
     })
     
