@@ -1,4 +1,15 @@
-import { User } from '@prisma/client'
+// ❌ Yeh line hata do
+// import { User } from '@prisma/client'
+
+// ✅ User type manually define karo
+export type User = {
+  id: string
+  email: string
+  password: string
+  createdAt: Date | string
+  name?: string
+  phone?: string
+}
 
 export const getCurrentUser = (): User | null => {
   if (typeof window !== 'undefined') {
