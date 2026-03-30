@@ -1,18 +1,9 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { Prisma } from '@prisma/client'  // ✅ Add this import
+import { Prisma } from '@prisma/client'
 
-// Define types for better type safety
-interface WhereClause {
-  OR?: Array<{
-    name?: { contains: string; mode: 'insensitive' }
-    description?: { contains: string; mode: 'insensitive' }
-  }>
-  price?: {
-    gte?: number
-    lte?: number
-  }
-}
+// Define types
+type WhereClause = Prisma.ProductWhereInput
 
 interface OrderBy {
   price?: 'asc' | 'desc'
@@ -32,12 +23,13 @@ export async function GET(request: Request) {
     
     const skip = (page - 1) * limit
     
+    // Build where clause with proper type
     const whereClause: WhereClause = {}
     
     if (search) {
       whereClause.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        { description: { contains: search, mode: Prisma.QueryMode.insensitive } }
       ]
     }
     
@@ -47,7 +39,8 @@ export async function GET(request: Request) {
       if (maxPrice) whereClause.price.lte = parseFloat(maxPrice)
     }
     
-    let orderBy: OrderBy = {}
+    // Build order by with proper type
+    let orderBy: OrderBy = { createdAt: 'desc' }
     switch (sort) {
       case 'price_asc':
         orderBy = { price: 'asc' }
@@ -64,20 +57,17 @@ export async function GET(request: Request) {
       case 'oldest':
         orderBy = { createdAt: 'asc' }
         break
-      default:
-        orderBy = { createdAt: 'desc' }
     }
     
-    // ✅ Now Prisma is imported, so this works
     const products = await db.product.findMany({
-      where: whereClause as Prisma.ProductWhereInput,
-      orderBy: orderBy as Prisma.ProductOrderByWithRelationInput,
+      where: whereClause,
+      orderBy: orderBy,
       skip: skip,
       take: limit
     })
     
     const total = await db.product.count({
-      where: whereClause as Prisma.ProductWhereInput
+      where: whereClause
     })
     
     return NextResponse.json({
